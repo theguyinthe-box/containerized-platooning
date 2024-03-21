@@ -26,7 +26,6 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o 
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 RUN apt update
 RUN apt install -y --fix-missing --no-install-recommends ros-galactic-desktop
-#ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 RUN apt install -y python3-colcon-common-extensions
 
 ##  Install vision_opencv, cv_bridge
@@ -52,11 +51,11 @@ RUN cd src && git clone https://github.com/AveesLab/lane_detection_ros2.git
 RUN cd src && git clone https://github.com/AveesLab/yolo_object_detection_ros2.git
 RUN cd src/yolo_object_detection_ros2/darknet && make -j12
 
-#COPY id_rsa .
-#RUN git config --add --global core.sshCommand 'ssh -i /ros2_ws/id_rsa'
-#RUN cd src && git clone git@github.com:theguyinthe-box/scale_truck_control_ros2_carla.git
 RUN apt install -y ros-galactic-ackermann-msgs
-COPY scale_truck_control_ros2_carla src/
-RUN source install/setup.bash && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug && . install/setup.bash
+COPY scale_truck_control_ros2_carla src/scale_truck_control_ros2
+# skipping yolo build
+RUN source install/setup.bash && colcon build --packages-up-to scale_truck_control_ros2 object_detection_ros2 lane_detection_ros2 --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug
 
+# need a domain to expose ROS topics
+ENV ROS_DOMAIN_ID=69
 CMD source install/setup.bash && ros2 launch scale_truck_control_ros2 LV_carla.launch.py
