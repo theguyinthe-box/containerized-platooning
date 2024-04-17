@@ -4,20 +4,20 @@ ARG ROS_DISTRO=galactic
 #  Base Image for Ros2 
 ######
 #FROM nvcr.io/nvidia/l4t-base:r36.2.0
-FROM nvcr.io/nvidia/l4t-cuda:11.4.19-devel
+FROM nvidia/cuda:11.6.1-cudnn8-devel-ubuntu20.04
 
 SHELL ["/bin/bash", "-c"]
 
 ## psure the two following lines are unnecessary unless this image comes loaded with opencv
 #RUN apt purge  libopencv* python-opencv
-#RUN find /usr/local/ -name "*opencv*" -exec rm -i {} \;
+RUN find /usr/local/ -name "*opencv*" -exec rm -i {} \;
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt -y dist-upgrade
 
 ## build OpenCV 
-COPY install_opencv4.4.0_Jetson.sh .
-RUN ./install_opencv4.4.0_Jetson.sh 
+COPY install_opencv4.4.0_Ubuntu.sh .
+RUN ./install_opencv4.4.0_Ubuntu.sh
 
 RUN apt install -y software-properties-common && apt-add-repository universe
 
@@ -34,7 +34,7 @@ RUN mkdir -p ros2_ws/src
 WORKDIR ros2_ws
 RUN cd src && git clone https://github.com/theguyinthe-box/vision_opencv.git -b galactic
 RUN source /opt/ros/galactic/setup.bash && colcon build --symlink-install && . install/setup.bash 
-RUN cd src && mv vision_opencv /
+RUN cd src && mv vision_opencv ~/
 
 ## ros2_msg
 RUN cd src && git clone https://github.com/AveesLab/ros2_msg.git
@@ -49,13 +49,13 @@ RUN cd src && git clone https://github.com/AveesLab/lane_detection_ros2.git
 
 ## yolo_object_detection
 RUN cd src && git clone https://github.com/AveesLab/yolo_object_detection_ros2.git
-RUN cd src/yolo_object_detection_ros2/darknet && make -j12
+RUN cd src/yolo_object_detection_ros2/darknet && make -j8
 
 RUN apt install -y ros-galactic-ackermann-msgs
-COPY scale_truck_control_ros2_carla src/scale_truck_control_ros2
+RUN cd src && git clone https://github.com/theguyinthe-box/scale_truck_control_ros2_carla.git
 # skipping yolo build
 RUN source install/setup.bash && colcon build --packages-up-to scale_truck_control_ros2 object_detection_ros2 lane_detection_ros2 --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Debug
 
 # need a domain to expose ROS topics
-ENV ROS_DOMAIN_ID=69
-CMD source install/setup.bash && ros2 launch scale_truck_control_ros2 LV_carla.launch.py
+#ENV ROS_DOMAIN_ID=69ff
+#CMD source install/setup.bash && ros2 launch scale_truck_control_ros2 LV_carla.launch.py

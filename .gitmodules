@@ -1,3 +1,0 @@
-[submodule "scale_truck_control_ros2_carla"]
-	path = scale_truck_control_ros2_carla
-	url = git@github.com:theguyinthe-box/scale_truck_control_ros2_carla.git
